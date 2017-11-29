@@ -2,6 +2,12 @@ import { Injectable, EventEmitter } from '@angular/core';
 import { Recipe } from '../recipes/recipe.model';
 import { Ingredient } from '../shared/ingredient.model';
 import { ShoppingListService } from './shopping-list.service';
+import { Subject } from 'rxjs/Subject';
+import { Http, Response } from '@angular/http';
+import 'rxjs/Rx';
+import { Observable } from 'rxjs/Observable';
+
+
 @Injectable()
 export class RecipesService {
   private recipes: Recipe[] = [
@@ -15,8 +21,9 @@ export class RecipesService {
     ])
   ];
 
+  updateRecipes = new Subject<Recipe[]>();
   // recipeSelected = new EventEmitter<Recipe>();
-  constructor(private shoppingListService: ShoppingListService) {
+  constructor(private shoppingListService: ShoppingListService, private http: Http) {
 
   }
   getRecipes() {
@@ -29,7 +36,47 @@ export class RecipesService {
     return recipeSelected;
   }
 
+  getRecipesDB(recipes: Recipe[]) {
+    this.recipes = [];
+    this.recipes = recipes;
+   
+    this.updateRecipes.next();
+  }
+
   addIngredientsToShoppingList(ingredients: Ingredient[]) {
     this.shoppingListService.addToShoppingList(ingredients);
+  }
+
+  addRecipe(recipe: Recipe) {
+    const id = this.recipes.length + 1;
+    recipe.id = id;
+   
+    this.recipes.push(recipe);
+    this.updateRecipes.next();
+
+  }
+
+  updateRecipe(index: number, newRecipe: Recipe) {
+    this.recipes.map((item,idx)=>{
+      if (this.recipes[idx].id == index) {
+        this.recipes[idx] = newRecipe;
+        this.recipes[idx].id = index;
+      }
+    })
+    this.updateRecipes.next();
+
+  }
+
+  deleteRecipeIngredients(index: number) {
+    let indexFound = this.recipes.findIndex(item=> item.id == index);
+    this.recipes[indexFound].ingredients = [];
+    console.log(this.recipes[indexFound])
+    // this.updateRecipes.next();
+  }
+
+  deleteRecipe(index: number) {
+    let indexFound = this.recipes.findIndex(item => item.id == index);
+    this.recipes.splice(indexFound,1);
+    this.updateRecipes.next();
   }
 }
